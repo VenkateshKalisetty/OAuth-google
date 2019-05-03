@@ -1,0 +1,32 @@
+{
+  "name": "oauth-google",
+  "version": "1.0.0",
+  "description": "OAuth using Google",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VenkateshKalisetty/OAuth-google.git"
+  },
+  "keywords": [
+    "OAuth",
+    "Google"
+  ],
+  "author": "VenkateshKalisetty",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VenkateshKalisetty/OAuth-google/issues"
+  },
+  "homepage": "https://github.com/VenkateshKalisetty/OAuth-google#readme",
+  "dependencies": {
+    "cookie-parser": "^1.4.4",
+    "cookie-session": "^1.3.3",
+    "express": "^4.16.4",
+    "http": "0.0.0",
+    "nodemon": "^1.19.0",
+    "passport": "^0.4.0",
+    "passport-google-oauth": "^2.0.0"
+  }
+}
