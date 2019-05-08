@@ -1,54 +1,79 @@
 const express = require("express");
 const http = require("http");
 const passport = require("passport");
-const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session');
+const GoogleStrategy = require('passport-google-oauth20').Strategy; 
+const session = require("express-session");
+const path = require("path");
 
 const config = require("./config");
-const auth = require("./src/middlewares/auth");
 
 const app = express();
 const server = http.createServer(app);
 
-auth(passport);
+app.use(session({
+    secret: config.session.secret,
+    resave: false,
+    saveUninitialized: false
+}));
 app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(__dirname + '/src/views/'));
 
-app.use(cookieSession({
-    name: config.cookie.name,
-    keys: config.cookie.key,
-    maxAge: 24 * 60 * 1000
-}));
-app.use(cookieParser());
+app.get('/', (req,res) => {
+    res.sendFile(path.join(__dirname+'/src/views'));
+});
 
-app.get('/', (req, res) => {
-    if (req.session.token) {
-        res.cookie('token', res.session.token);
-        res.json({
-            status: 'cookie set'
-        });
+passport.serializeUser((user, done) => {  
+    done(null, user);
+});
+
+passport.deserializeUser((userDataFromCookie, done) => {  
+    done(null, userDataFromCookie);
+});
+
+// Checks if a user is logged in
+const accessProtectionMiddleware = (req, res, next) => {  
+    if (req.isAuthenticated()) {
+      next();
     } else {
-        res.cookie('token', '');
-        res.json({
-            status: 'cookie not set'
-        });
+      res.status(403).json({
+        message: 'must be logged in to continue',
+      });
     }
-});
+  };
 
-app.get('/logout', (req, res) => {
-    req.logout();
-    req.session = null;
-    res.redirect('/');
-});
+  // Set up passport strategy
+passport.use(new GoogleStrategy(  
+    {
+      clientID: config["google-oauth2"].clientId,
+      clientSecret: config["google-oauth2"].clientSecret,
+      callbackURL: 'http://localhost:3000/auth/google/callback',
+      scope: ['email'],
+    },
+    (accessToken, refreshToken, profile, cb) => {
+      return cb(null, profile);
+    },
+  ));
 
-app.get('/auth/google', passport.authenticate('google', {
-    scope: ['https://www.googleapis.com/auth/userinfo.profile']
-}));
-
-app.get('/auth/google/callback', passport.authenticate('google', {failureRedirect: '/'}), (req, res) => {
-    req.session.token = req.user.token;
-    console.log(req.user.token);
-    res.redirect('/');
-});
+  app.get('/auth/google/callback',  
+    passport.authenticate('google', { failureRedirect: '/', session: true }),
+    (req, res) => {
+      console.log('wooo we authenticated, here is our user object:', req.user);
+      // res.json(req.user);
+      res.redirect('/');
+    }
+  );
+  
+  app.get('/protected', accessProtectionMiddleware, (req, res) => {  
+    res.json({
+      message: 'You have accessed',
+      id: req.user.id,
+      email: req.user.emails[0].value,
+      photo: req.user.photos[0].value
+    });
+    // res.writeHead(200, { 'Content-Type': 'text/html' });
+    // res.write('<h6>' + req.user.emails[0].value + '</h6><br><img src="'+ req.user.photos[0].value +'"/>');
+  });
 
 server.listen(process.env.PORT || config.port, err => {
     if (err) {
