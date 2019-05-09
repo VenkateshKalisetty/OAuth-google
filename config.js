@@ -5,7 +5,7 @@ let appConfig = {
     },
     "google-oauth2": {
         "clientId": "<ID>",
-        "clientSecret": "<SECRET>",
+        "clientSecret": "<SECRETID>",
         "callbackUrl": '/auth/google/callback'
     }
 }
